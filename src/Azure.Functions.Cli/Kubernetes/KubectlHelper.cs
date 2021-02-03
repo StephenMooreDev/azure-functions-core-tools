@@ -71,17 +71,17 @@ namespace Azure.Functions.Cli.Kubernetes
 
         public static Task<Process> RunKubectlProxy(IKubernetesResource resource, int targetPort, int localPort, TimeSpan? timeout = null)
         {
-            var kubectl = new Executable("kubectl", $"port-forward {getResourceFullName(resource)} {localPort}:{targetPort}");
+            var kubectl = new Executable("kubectl", $"port-forward {GetResourceFullName(resource)} {localPort}:{targetPort}");
             var sbError = new StringBuilder();
             var sbOutput = new StringBuilder();
             var tcs = new TaskCompletionSource<Process>();
             var deadline = DateTime.Now.Add(timeout ?? TimeSpan.FromSeconds(20));
 
-            var exitCodeTask = Task.Run(() => kubectl.RunAsync(l => output(l, false), e => output(e, true)));
-            Task.Run(() => timeoutFunc());
+            var exitCodeTask = kubectl.RunAsync(l => Output(l, false), e => Output(e, true));
+            Task.Run(() => TimeoutFunc());
             return tcs.Task;
 
-            void output(string line, bool isError)
+            void Output(string line, bool isError)
             {
                 if (!isError && line?.Contains("Forwarding from") == true)
                 {
@@ -97,7 +97,7 @@ namespace Azure.Functions.Cli.Kubernetes
                 }
             }
 
-            async Task timeoutFunc()
+            async Task TimeoutFunc()
             {
                 while(DateTime.Now < deadline)
                 {
@@ -120,23 +120,18 @@ namespace Azure.Functions.Cli.Kubernetes
                 }
             }
 
-            string getResourceFullName(IKubernetesResource r)
+            string GetResourceFullName(IKubernetesResource r)
             {
-                if (r is DeploymentV1Apps deployment)
+                switch (r)
                 {
-                    return $"deployment/{deployment.Metadata.Name} --namespace {deployment.Metadata.Namespace}";
-                }
-                else if (r is ServiceV1 service)
-                {
-                    return $"service/{service.Metadata.Name} --namespace {service.Metadata.Namespace}";
-                }
-                else if (r is PodTemplateV1 pod)
-                {
-                    return $"pod/{pod.Metadata.Name} --namespace {pod.Metadata.Namespace}";
-                }
-                else
-                {
-                    throw new ArgumentException($"type {r.GetType()} is not supported");
+                    case DeploymentV1Apps deployment:
+                        return $"deployment/{deployment.Metadata.Name} --namespace {deployment.Metadata.Namespace}";
+                    case ServiceV1 service:
+                        return $"service/{service.Metadata.Name} --namespace {service.Metadata.Namespace}";
+                    case PodTemplateV1 pod:
+                        return $"pod/{pod.Metadata.Name} --namespace {pod.Metadata.Namespace}";
+                    default:
+                        throw new ArgumentException($"type {r.GetType()} is not supported");
                 }
             }
         }
