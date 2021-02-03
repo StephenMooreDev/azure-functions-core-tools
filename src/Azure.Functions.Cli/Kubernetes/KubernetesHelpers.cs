@@ -573,7 +573,33 @@ namespace Azure.Functions.Cli.Kubernetes
                                         {
                                             ContainerPort = 80
                                         }
-                                    }
+                                    },
+                                ReadinessProbe = new Probe
+                                {
+                                    FailureThreshold = 3,
+                                    HttpGet = new HttpAction
+                                    {
+                                        Path = "/",
+                                        port = 80,
+                                        Scheme = "HTTP"
+                                    },
+                                    PeriodSeconds = 10,
+                                    SuccessThreshold = 1,
+                                    TimeoutSeconds = 240
+                                },
+                                StartupProbe = new Probe
+                                {
+                                    FailureThreshold = 3,
+                                    HttpGet = new HttpAction
+                                    {
+                                        Path = "/",
+                                        port = 80,
+                                        Scheme = "HTTP"
+                                    },
+                                    PeriodSeconds = 10,
+                                    SuccessThreshold = 1,
+                                    TimeoutSeconds = 240
+                                }
                               }
                             },
                             ImagePullSecrets = string.IsNullOrEmpty(pullSecret)
